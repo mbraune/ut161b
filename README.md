@@ -11,7 +11,9 @@ UNI-T 161B with UT  D09A data cable
 ### Data cable D09A
 serial port to HID device chip CH9329
 
-uses built-in driver HID-compliant vendor-defined device
+uses built-in driver, 
+HID-compliant vendor-defined device, 
+
 VID 1A86
 PID E429
 
