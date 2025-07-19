@@ -1,10 +1,4 @@
 ## UT161B
-### Scope
-
-UNI-T 161B with UT  D09A data cable
-
-![D09A data cable](cable-D09A.png)
-
 ### Protocol analysis
 
 commands are sent and data received via HID data in URB interrupt frames 
