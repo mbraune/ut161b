@@ -59,11 +59,12 @@ first 8 bytes seem always identical:
 20 bytes are relevant, example data: 
 
 ###### DCV 3.795
-
-`13 ab cd 10 02 30 20 20 33 2e 37 39 35 01 08 30`
-`30 30 03 99 cb f7 6b af a7 4f ff ce 7b b7 28 6b`
-`4c f7 d9 75 5d af 79 ff 9f 75 af ef f7 7f eb d9`
-`ff 37 db eb a7 df ef 2b ae d7 bb fd f9 f7 5f 6b`
+````
+13 ab cd 10 02 30 20 20 33 2e 37 39 35 01 08 30
+30 30 03 99 cb f7 6b af a7 4f ff ce 7b b7 28 6b
+4c f7 d9 75 5d af 79 ff 9f 75 af ef f7 7f eb d9
+ff 37 db eb a7 df ef 2b ae d7 bb fd f9 f7 5f 6b
+````
 
 ###### frame structure meas results
 | offset | size | value (hex)          | interpretation      |
@@ -98,8 +99,9 @@ first 8 bytes seem always identical:
 | 0x1011      | ACA             | A   |   |
 
 ###### DCV -3.792
-
-`13 ab cd 10 02 30 20 2d 33 2e 37 39 32 01 08 30`
-`30 31 03 a4 cb f7 6b af a7 4f ff ce 7b b7 28 6b`
-`4c f7 d9 75 5d af 79 ff 9f 75 af ef f7 7f eb d9`
-`ff 37 db eb a7 df ef 2b ae d7 bb fd f9 f7 5f 6b`
+````
+13 ab cd 10 02 30 20 2d 33 2e 37 39 32 01 08 30
+30 31 03 a4 cb f7 6b af a7 4f ff ce 7b b7 28 6b
+4c f7 d9 75 5d af 79 ff 9f 75 af ef f7 7f eb d9
+ff 37 db eb a7 df ef 2b ae d7 bb fd f9 f7 5f 6b
+````
