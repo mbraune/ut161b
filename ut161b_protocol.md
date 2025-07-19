@@ -1,15 +1,19 @@
 ## UT161B
 ### Protocol analysis
 
-commands are sent and data received via HID data in URB interrupt frames 
+Vendor tool UT161E v2.02 was used to control the device, wireshark with USBPcap1 was used to record frames.
 
-#### request cmds host -> device
+USB source and destination to find via string search for Device 1A86 (vendor id for QinHeng Electronics)
+
+Commands are sent and data received via HID data in URB interrupt frames 
+
+### request cmds host -> device
 
 URB interrupt out frame 
 
 ​	total size: 91bytes , 27 USB URB , 64 HID data 
 
-##### HID data request command
+#### HID data request command
 
 used 7 bytes (always ?)
 
@@ -25,7 +29,7 @@ examples:
 
 
 - set MAX/MIN
-##### request command types
+#### request command types
 
 0341	MAX/MIN
 
@@ -41,7 +45,7 @@ examples:
 
 ..tbc
 
-#### response device ->  host
+### response device ->  host
 
 URB_INTERRUPT in frame
 
@@ -51,11 +55,11 @@ URB_INTERRUPT in frame
 
 - 64 byte HID Data contain response data
 
-##### response on command request
+#### response on command request
 first 8 bytes seem always identical:
 07abcd04ff00027b... 
 
-##### response on meas result request
+#### response on meas result request
 20 bytes are relevant, example data: 
 
 ###### DCV 3.795
@@ -66,7 +70,7 @@ first 8 bytes seem always identical:
 ff 37 db eb a7 df ef 2b ae d7 bb fd f9 f7 5f 6b
 ````
 
-###### frame structure meas results
+##### frame structure meas results
 | offset | size | value (hex)          | interpretation      |
 | -------| ---- | -------------------- | ------------------- |
 | 0      | 1    | 13                   | length              |
@@ -78,7 +82,7 @@ ff 37 db eb a7 df ef 2b ae d7 bb fd f9 f7 5f 6b
 | 15     | 3    | 30 30 30             | **sign? ** ascii             |
 | 18     | 2    | 03 99                | **bytesum** (1-17)           |
 
-###### mode value interpretation and ranges 
+##### mode value interpretation and ranges 
 
 | mode value  |  interpretation |unit | range flags   |
 | ----------- |  -------------- |---- | ------------  |
