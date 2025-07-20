@@ -6,45 +6,62 @@ from typing import Optional, Dict, Union
 VID = 0x1A86  # Vendor ID for D-09A
 PID = 0xE429  # Product ID
 
-def read_ut161b_hid():
+#
+def handle_request(cmd):
     try:
         device = hid.device()
         device.open(VID, PID)  # Open the HID device
         print(f"Connected to {device.get_product_string()}")
 
         # URB_INTERRUPT out	
-        # HID Data: 06abcd035e01d9000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
         # hid api function hid_get_feature_report needs 1 byte at front for Report ID, seems here also needed, use 0
-        request_command = [0x00, 0x06, 0xab, 0xcd, 0x03, 0x5e, 0x01, 0xd9] 
+        # build 7 bytes request cmd, see ut161b_protocol.md
+        cmd &= 0xFFFF  
+        cmd0 = (cmd & 0xFF00) >> 8  # upper 8 bit
+        cmd1 = cmd & 0x00FF         # lower 8 bits
+        sum  = (0xab + 0xcd + cmd0 + cmd1) & 0xFFFF
+        sum0 = (sum & 0xFF00) >> 8
+        sum1 = sum & 0x00FF
+        request_command = [0x00, 0x06, 0xab, 0xcd, cmd0, cmd1, sum0, sum1] 
+        formatted = ' '.join(f'{b:02x}' for b in request_command)
+        print("request  ", formatted) 
         device.write(request_command)
         
         time.sleep(0.01)  # Small delay to allow response
 
         # Read response
         response = device.read(64)  # Read up to 64 bytes
-        if response:
-            #print(f"Received Data: {response}")
+        #if response:
             # Convert to hex and format into 4 lines
-            hex_lines = [bytes(response[i:i+16]).hex(" ") for i in range(0, 64, 16)]
+            # hex_lines = [bytes(response[i:i+16]).hex(" ") for i in range(0, 64, 16)]
             # Print each line
-            for line in hex_lines:
-                print(line)  # Uppercase for better readabilit
-
-        else:
-            print("No response received.")
-        
+            #for line in hex_lines:
+            #    print(line)  # Uppercase for better readabilit
+        #else:
+        #    print("No response received.")
+       
         device.close()
 
     except Exception as e:
         print(f"Error: {e}")
         
-    return response[0:20]
+    return response[0:64]
+
+def handle_meas_result_request():
+    return handle_request(0x035e)
 
 
-#def parse_ut161b(packet: bytes) -> Optional[Dict[str, Union[str, float]]]:
-def parse_ut161b(packet: bytes):
+def print_reponse(packet: bytes):
+    length = packet[0]
+    # Slice and format
+    first_n = packet[:length+1]
+    formatted = ' '.join(f'{b:02x}' for b in first_n)
+    print("response ", formatted)       
+
+
+def parse_meas_result(packet: bytes):
     """
-    Decodes a UNI-T UT161B multimeter HID packet.
+    Decodes a UNI-T UT161B multimeter HID packet containg meas results.
     Returns a dictionary with 'mode', 'value', 'unit' and 'range'.
     """
     if len(packet) < 20:
@@ -71,8 +88,9 @@ def parse_ut161b(packet: bytes):
     }
 
     # Extract fields
-    magic = packet[1:3]
-    mode = (packet[3]<<8) | packet[4]
+    length = packet[0]
+    magic  = packet[1:3]
+    mode   = (packet[3]<<8) | packet[4]
     range_flag = packet[5]  # ASCII digit
     value_str = bytes(packet[6:13]).decode('ascii').strip()  # '  3.795' → '3.795'
     range_info = packet[13:15]
@@ -151,9 +169,12 @@ def parse_ut161b(packet: bytes):
 
     range_str = range_map.get(range_flag, (f"Range {range_flag - 0x30}", "?"))
 
-    #calc_checksum = checksum_8bit(packet[1:18])
-    if checksum_8bit(packet[1:18]) != packet[19]:
-        print(f"Checksum error: expected {hex(packet[19])}, got {hex(calc_checksum)}", file=sys.stderr)
+    sum0, sum1 =  byte_sum_split(packet[1:length-1])
+    if sum0 != packet[19]:
+        print(f"Checksum error: expected {hex(packet[19])}, got {hex(sum0)}", file=sys.stderr)
+    if sum1 != packet[18]:
+        print(f"Checksum error: expected {hex(packet[18])}, got {hex(sum1)}", file=sys.stderr)
+
 
     return {
         'mode': mode_map.get(mode, f"UNKNOWN (0x{mode:02x})"),
@@ -162,17 +183,29 @@ def parse_ut161b(packet: bytes):
         'range': range_str
     }
 
-def checksum_8bit(byte_sequence):
-    return sum(byte_sequence) % 256
+def byte_sum_split(byte_seq):
+    total = sum(byte_seq) & 0xFFFF
+    low_byte = total & 0x00FF
+    high_byte = (total >> 8) & 0x00FF
+
+    return low_byte, high_byte
 
 
 def main():
     """Command-line interface for parsing UT161B packets."""
-    packet = read_ut161b_hid()
 
-    result = parse_ut161b(packet)
+    # send MAX/MIN request and receive packet
+    packet = handle_request(0x0341)
+    print_reponse(packet)
+
+    # send req 035e meas result and receive packet
+    packet = handle_meas_result_request()
+    print_reponse(packet)
+
+    # parse meas result
+    result = parse_meas_result(packet)
     if result:
-        print("Decoded Packet:")
+        print("Decoded meas result response:")
         for key, val in result.items():
             print(f"{key:>6}: {val}")
 
