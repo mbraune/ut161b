@@ -1,4 +1,4 @@
-## UT161B
+## UT161B with D-09A
 ### Protocol analysis
 
 Vendor tool UT161E v2.02 was used to control the device, wireshark with USBPcap1 was used to record frames.
