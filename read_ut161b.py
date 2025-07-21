@@ -1,71 +1,57 @@
 import hid
 import time
 import sys
-from typing import Optional, Dict, Union
+#from typing import Optional, Dict, Union
 
 VID = 0x1A86  # Vendor ID for D-09A
 PID = 0xE429  # Product ID
 
 #
-def handle_request(cmd):
-    try:
-        device = hid.device()
-        device.open(VID, PID)  # Open the HID device
-        print(f"Connected to {device.get_product_string()}")
+# build 7 bytes request cmd, see ut161b_protocol.md
+# cmd is uint16 containing request comand type
+def handle_request(device: hid.device, cmd: int):
+    cmd &= 0xFFFF  
+    cmd0 = (cmd & 0xFF00) >> 8  # upper 8 bit
+    cmd1 = cmd & 0x00FF         # lower 8 bits
+    sum  = (0xab + 0xcd + cmd0 + cmd1) & 0xFFFF
+    sum0 = (sum & 0xFF00) >> 8
+    sum1 = sum & 0x00FF
+    # hid api function hid_get_feature_report needs 1 byte at front for Report ID, seems here also needed, use 0
+    request_command = [0x00, 0x06, 0xab, 0xcd, cmd0, cmd1, sum0, sum1] 
+    print_packet("request ", request_command[1:])
+    device.write(request_command)
+    
+    time.sleep(0.01)  # Small delay to allow response
 
-        # URB_INTERRUPT out	
-        # hid api function hid_get_feature_report needs 1 byte at front for Report ID, seems here also needed, use 0
-        # build 7 bytes request cmd, see ut161b_protocol.md
-        cmd &= 0xFFFF  
-        cmd0 = (cmd & 0xFF00) >> 8  # upper 8 bit
-        cmd1 = cmd & 0x00FF         # lower 8 bits
-        sum  = (0xab + 0xcd + cmd0 + cmd1) & 0xFFFF
-        sum0 = (sum & 0xFF00) >> 8
-        sum1 = sum & 0x00FF
-        request_command = [0x00, 0x06, 0xab, 0xcd, cmd0, cmd1, sum0, sum1] 
-        formatted = ' '.join(f'{b:02x}' for b in request_command)
-        print("request  ", formatted) 
-        device.write(request_command)
-        
-        time.sleep(0.01)  # Small delay to allow response
-
-        # Read response
-        response = device.read(64)  # Read up to 64 bytes
-        #if response:
-            # Convert to hex and format into 4 lines
-            # hex_lines = [bytes(response[i:i+16]).hex(" ") for i in range(0, 64, 16)]
-            # Print each line
-            #for line in hex_lines:
-            #    print(line)  # Uppercase for better readabilit
-        #else:
-        #    print("No response received.")
-       
-        device.close()
-
-    except Exception as e:
-        print(f"Error: {e}")
-        
+    response = device.read(64)  # Read up to 64 bytes      
     return response[0:64]
 
-def handle_meas_result_request():
-    return handle_request(0x035e)
-
-
-def print_reponse(packet: bytes):
+#
+#
+def print_packet(desc: str, packet: bytes):
     length = packet[0]
-    # Slice and format
-    first_n = packet[:length+1]
-    formatted = ' '.join(f'{b:02x}' for b in first_n)
-    print("response ", formatted)       
+    # print length+1 bytes
+    disp = packet[:length+1]
+    formatted = '  '.join(f'{b:02x}' for b in disp)
+    print(desc, formatted)       
 
+#
+# get low and high byte of bytesum
+def byte_sum_split(byte_seq):
+    total = sum(byte_seq) & 0xFFFF
+    low_byte = total & 0x00FF
+    high_byte = (total >> 8) & 0x00FF
+    return low_byte, high_byte
 
+#
+#
 def parse_meas_result(packet: bytes):
     """
     Decodes a UNI-T UT161B multimeter HID packet containg meas results.
     Returns a dictionary with 'mode', 'value', 'unit' and 'range'.
     """
     if len(packet) < 20:
-        print("Error: Packet too short (expected 20 bytes)", file=sys.stderr)
+        print("Error: Packet too short, minimum 20bytes", file=sys.stderr)
         return None
 
     # Mode mappings
@@ -183,31 +169,47 @@ def parse_meas_result(packet: bytes):
         'range': range_str
     }
 
-def byte_sum_split(byte_seq):
-    total = sum(byte_seq) & 0xFFFF
-    low_byte = total & 0x00FF
-    high_byte = (total >> 8) & 0x00FF
+#########################################################################
 
-    return low_byte, high_byte
-
-
+# basic example 
+# - open hid device 
+# - send some request cmd
+# - send measure result request , 
+# - parse meas result response
+# - close device
 def main():
-    """Command-line interface for parsing UT161B packets."""
+    try:
+        device = hid.device()
+        device.open(VID, PID)  # Open the HID device
+        print(f"Connected to {device.get_product_string()}")
 
-    # send MAX/MIN request and receive packet
-    packet = handle_request(0x0341)
-    print_reponse(packet)
+		# send switch light request
+        resp = handle_request(device, 0x034b)
+        print_packet("response", resp)
+        time.sleep(0.1)     # switch light seems to need some time
 
-    # send req 035e meas result and receive packet
-    packet = handle_meas_result_request()
-    print_reponse(packet)
+		# send MAX/MIN request 
+        resp = handle_request(device, 0x0341)
+        print_packet("response", resp)
+        time.sleep(0.1)
 
-    # parse meas result
-    result = parse_meas_result(packet)
-    if result:
-        print("Decoded meas result response:")
-        for key, val in result.items():
-            print(f"{key:>6}: {val}")
+        # send req 035e meas result and receive packet
+        resp = handle_request(device, 0x35e)
+        print_packet("response", resp)
+
+        # parse meas result
+        result = parse_meas_result(resp)
+        if result:
+            print("Decoded meas result response:")
+            for key, val in result.items():
+                print(f"{key:>6}: {val}")
+
+
+        device.close()
+
+    except Exception as e:
+        print(f"Error: {e}")
+
 
 if __name__ == "__main__":
     main()

@@ -15,9 +15,9 @@ URB interrupt out frame
 
 #### HID data request command
 
-used 7 bytes (always ?)
+all commands observed have length 7 byte
 
-examples: 
+example: 
 - get meas result [0x06, 0xab, 0xcd, 0x03, 0x5e, 0x01, 0xd9] 
 
 | offset   | size | value (hex) | comment |
@@ -28,22 +28,18 @@ examples:
 | 5        | 2  | 01 d9       | bytesum (1-4) |
 
 
-- set MAX/MIN
 #### request command types
 
-0341	MAX/MIN
+| cmd (hex) | interpretation |
+| --------  |  ------------ |
+| 0341      |  MAX/MIN      |
+| 0342      |  exit MAX/MIN |
+| 0346      |  manual       |
+| 0347      |  AUTO         |
+| 034b      |  switch light |
+| 035e      |  meas result  |
+| ..        |  tbc          |
 
-0342	exit MAX/MIN
-
-0346	manual
-
-0347	AUTO
-
-034b	switch light
-
-035e 	meas result
-
-..tbc
 
 ### response device ->  host
 
@@ -56,11 +52,20 @@ URB_INTERRUPT in frame
 - 64 byte HID Data contain response data
 
 #### response on command request
-first 8 bytes seem always identical:
-07abcd04ff00027b... 
+always identical ? 
+07abcd04ff00027b
+##### frame structure
+| offset | size | value (hex)          | interpretation      |
+| -------| ---- | -------------------- | ------------------- |
+| 0      | 1    | 07                   | length              |
+| 1      | 2    | ab cd                | UNI-T header        |
+| 3      | 1    | 04                   |                     |
+| 4      | 1    | ff 00                | ?                    |
+| 6      | 2    | 02 7b                | **bytesum** (1-5)  |
+
 
 #### response on meas result request
-20 bytes are relevant, example data: 
+example data 64 byte HID : 
 
 ###### DCV 3.795
 ````
@@ -69,6 +74,7 @@ first 8 bytes seem always identical:
 4c f7 d9 75 5d af 79 ff 9f 75 af ef f7 7f eb d9
 ff 37 db eb a7 df ef 2b ae d7 bb fd f9 f7 5f 6b
 ````
+relevant are first 20 byte:
 
 ##### frame structure meas results
 | offset | size | value (hex)          | interpretation      |
