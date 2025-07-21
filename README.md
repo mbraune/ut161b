@@ -28,7 +28,7 @@ protocol to be decoded by vendor tool and wireshark
  - send 2 request cmds
  - send measure result request
  - parse meas result response
- - close devicepython example
+ - close device
 
 **output:**
 ````
