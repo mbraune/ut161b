@@ -33,15 +33,15 @@ protocol to be decoded by vendor tool and wireshark
 **output:**
 ````
 Connected to WCH UART TO KB-MS_V1.7
-request  06  ab  cd  03  4b  01  c6
-response 07  ab  cd  04  ff  00  02  7b
-request  06  ab  cd  03  41  01  bc
-response 07  ab  cd  04  ff  00  02  7b
-request  06  ab  cd  03  5e  01  d9
-response 13  ab  cd  10  01  30  20  20  32  34  2e  35  34  00  05  38  34  30  03  97
+request  06 ab cd 03 4b 01 c6
+response 07 ab cd 04 ff 00 02 7b
+request  06 ab cd 03 41 01 bc
+response 07 ab cd 04 ff 00 02 7b
+request  06 ab cd 03 5e 01 d9
+response 13 ab cd 10 01 30 20 20 20 31 2e 31 32 00 00 34 34 30 03 73
 Decoded meas result response:
   mode: ACmV
- value: 24.54
+ value: 1.12
   unit: mV
  range: 220
 ````

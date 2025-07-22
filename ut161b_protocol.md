@@ -60,14 +60,12 @@ always identical ?
 | 0      | 1    | 07                   | length              |
 | 1      | 2    | ab cd                | UNI-T header        |
 | 3      | 1    | 04                   |                     |
-| 4      | 1    | ff 00                | ?                    |
+| 4      | 2    | ff 00                | ?                   |
 | 6      | 2    | 02 7b                | **bytesum** (1-5)  |
 
 
 #### response on meas result request
-example data 64 byte HID : 
-
-###### DCV 3.795
+**example data 64 byte HID  (meas mode DCV, display 3.795V)** 
 ````
 13 ab cd 10 02 30 20 20 33 2e 37 39 35 01 08 30
 30 30 03 99 cb f7 6b af a7 4f ff ce 7b b7 28 6b
@@ -85,7 +83,7 @@ relevant are first 20 byte:
 | 5      | 1    | 30                   | **range** ascii, dep on mode |
 | 6      | 7    | 20 20 33 2e 37 39 35 | **value** ascii __3.795      |
 | 13     | 2    | 01 08                | unclear                      |
-| 15     | 3    | 30 30 30             | **sign? ** ascii             |
+| 15     | 3    | 30 30 30             | **meas settings? ** ascii    |
 | 18     | 2    | 03 99                | **bytesum** (1-17)           |
 
 ##### mode value interpretation and ranges 
@@ -99,19 +97,12 @@ relevant are first 20 byte:
 | 0x1004      | FREQ            | Hz  | 30="22"                               |
 | 0x1005      | Duty            |     |   |
 | 0x1006      | RES             |     | 30="220Ω", 31="2kΩ", 32="22kΩ", 33="220kΩ", 34="2MΩ",35="22MΩ" |
-| 0x1008      | Diode           | V   | 30="2"  |
-| 0x1009      | CAP             | nF  |   |
-| 0x100c      | DCµA            | µA  |   |
-| 0x100d      | ACµA            | µA  |   |
-| 0x100e      | DCmA            | mA  |   |
-| 0x100f      | ACmA            | mA  |   |
-| 0x1010      | DCA             | A   |   |
-| 0x1011      | ACA             | A   |   |
+| 0x1008      | Diode           | V   | 30="2"               |
+| 0x1009      | CAP             | nF  | 30="22"              |
+| 0x100c      | DCµA            | µA  | 30="220", 31="2200"  |
+| 0x100d      | ACµA            | µA  | 30="220", 31="2200"  |
+| 0x100e      | DCmA            | mA  | 30="22", 31="220"    |
+| 0x100f      | ACmA            | mA  | 30="22", 31="220"    |
+| 0x1010      | DCA             | A   | 30="2", 31="22"      |
+| 0x1011      | ACA             | A   | 30="2", 31="22"      |
 
-###### DCV -3.792
-````
-13 ab cd 10 02 30 20 2d 33 2e 37 39 32 01 08 30
-30 31 03 a4 cb f7 6b af a7 4f ff ce 7b b7 28 6b
-4c f7 d9 75 5d af 79 ff 9f 75 af ef f7 7f eb d9
-ff 37 db eb a7 df ef 2b ae d7 bb fd f9 f7 5f 6b
-````

@@ -32,7 +32,7 @@ def print_packet(desc: str, packet: bytes):
     length = packet[0]
     # print length+1 bytes
     disp = packet[:length+1]
-    formatted = '  '.join(f'{b:02x}' for b in disp)
+    formatted = ' '.join(f'{b:02x}' for b in disp)
     print(desc, formatted)       
 
 #
