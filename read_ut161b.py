@@ -3,8 +3,9 @@ import time
 import sys
 #from typing import Optional, Dict, Union
 
-VID = 0x1A86  # Vendor ID for D-09A
-PID = 0xE429  # Product ID
+# cable D-09A
+VID = 0x1A86  # Vendor ID QinHeng Electronnics
+PID = 0xE429  # HID ch9329
 
 #
 # build 7 bytes request cmd, see ut161b_protocol.md
@@ -180,7 +181,7 @@ def parse_meas_result(packet: bytes):
 def main():
     try:
         device = hid.device()
-        device.open(VID, PID)  # Open the HID device
+        device.open(VID, PID)
         print(f"Connected to {device.get_product_string()}")
 
 		# send switch light request
