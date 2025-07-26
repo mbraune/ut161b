@@ -23,22 +23,28 @@ example:
 | offset   | size | value (hex) | comment |
 | -------- | -- | ----------- | ------- |
 | 0        | 1  | 06          | len     |
-| 1        | 2  | ab cd       | UNI-T header |
-| 3        | 2  | 03 5e       | command type |
-| 5        | 2  | 01 d9       | bytesum (1-4) |
+| 1        | 2  | ab cd       | UNI-T header    |
+| 3        | 1  | 03          | bytes to follow |
+| 4        | 1  | 5e          | command type    |
+| 5        | 2  | 01 d9       | bytesum (1-4)   |
 
 
 #### request command types
 
-| cmd (hex) | interpretation |
-| --------  |  ------------ |
-| 0341      |  MAX/MIN      |
-| 0342      |  exit MAX/MIN |
-| 0346      |  manual       |
-| 0347      |  AUTO         |
-| 034b      |  switch light |
-| 035e      |  meas result  |
-| ..        |  tbc          |
+| cmd (hex)      | interpretation |
+| -------------- | -------------- |
+| 41             | MAX/MIN        |
+| 42             | exit MAX/MIN   |
+| 46             | manual         |
+| 47             | AUTO           |
+| 48             | rel            |
+| 4b             | switch light   |
+| 4d             | Peak min/max   |
+| 4e             | exit Peak      |
+| 5e             | meas result    |
+|                |                |
+| 5f followed by | device name    |
+| 30             | flush buf ?    |
 
 
 ### response device ->  host
@@ -52,16 +58,20 @@ URB_INTERRUPT in frame
 - 64 byte HID Data contain response data
 
 #### response on command request
-always identical ? 
+almost identical
 07abcd04ff00027b
+
+#### response on device ident request
+0b ab cd 08 55 54 31 36 31 42 03 03
+
 ##### frame structure
 | offset | size | value (hex)          | interpretation      |
 | -------| ---- | -------------------- | ------------------- |
-| 0      | 1    | 07                   | length              |
+| 0      | 1    | 0b                   | length              |
 | 1      | 2    | ab cd                | UNI-T header        |
-| 3      | 1    | 04                   |                     |
-| 4      | 2    | ff 00                | ?                   |
-| 6      | 2    | 02 7b                | **bytesum** (1-5)  |
+| 3      | 1    | 08                   | bytes to follow     |
+| 4      | 6    | 55 54 31 36 31 42    | ascii **UT161B**    |
+| 10     | 2    | 03 03                | **bytesum** (1-11)  |
 
 
 #### response on meas result request
@@ -79,30 +89,33 @@ relevant are first 20 byte:
 | -------| ---- | -------------------- | ------------------- |
 | 0      | 1    | 13                   | length              |
 | 1      | 2    | ab cd                | UNI-T header        |
-| 3      | 2    | 10 02                | **mode** see next table      |
+| 3      | 1    | 10                   | bytes to follow              |
+| 4      | 1    | 02                   | **mode** see next table      |
 | 5      | 1    | 30                   | **range** ascii, dep on mode |
 | 6      | 7    | 20 20 33 2e 37 39 35 | **value** ascii __3.795      |
-| 13     | 2    | 01 08                | unclear                      |
-| 15     | 3    | 30 30 30             | **meas settings? ** ascii    |
+| 13     | 2    | 01 08                | unclear , progress?          |
+| 15     | 1    | 30                   | **meas settings1** bitmask   |
+| 16     | 1    | 30                   | **meas settings2** bitmask   |
+| 17     | 1    | 30                   | **meas settings3** bitmask   |
 | 18     | 2    | 03 99                | **bytesum** (1-17)           |
 
 ##### mode value interpretation and ranges 
 
-| mode value  |  interpretation |unit | range flags   |
+| mode (hex)  |  interpretation |unit | range flags   |
 | ----------- |  -------------- |---- | ------------  |
-| 0x1000      | ACV             | V   | 30="2", 31="22", 32="220", 33="1000"  |
-| 0x1001      | ACmV            | mV  | 30="220", 31="1000"                   |
-| 0x1002      | DCV             | V   | 30="2", 31="22", 32="220", 33="1000"  |
-| 0x1003      | DCmV            | mV  | 30="220", 31="1000"                   |
-| 0x1004      | FREQ            | Hz  | 30="22"                               |
-| 0x1005      | Duty            |     |   |
-| 0x1006      | RES             |     | 30="220Ω", 31="2kΩ", 32="22kΩ", 33="220kΩ", 34="2MΩ",35="22MΩ" |
-| 0x1008      | Diode           | V   | 30="2"               |
-| 0x1009      | CAP             | nF  | 30="22"              |
-| 0x100c      | DCµA            | µA  | 30="220", 31="2200"  |
-| 0x100d      | ACµA            | µA  | 30="220", 31="2200"  |
-| 0x100e      | DCmA            | mA  | 30="22", 31="220"    |
-| 0x100f      | ACmA            | mA  | 30="22", 31="220"    |
-| 0x1010      | DCA             | A   | 30="2", 31="22"      |
-| 0x1011      | ACA             | A   | 30="2", 31="22"      |
+| 00          | ACV             | V   | 30="2", 31="22", 32="220", 33="1000"  |
+| 01          | ACmV            | mV  | 30="220", 31="1000"                   |
+| 02          | DCV             | V   | 30="2", 31="22", 32="220", 33="1000"  |
+| 03          | DCmV            | mV  | 30="220", 31="1000"                   |
+| 04          | FREQ            | Hz  | 30="22"                               |
+| 05          | Duty            |     |   |
+| 06          | RES             |     | 30="220Ω", 31="2kΩ", 32="22kΩ", 33="220kΩ", 34="2MΩ",35="22MΩ" |
+| 08          | Diode           | V   | 30="2"               |
+| 09          | CAP             | nF  | 30="22"              |
+| 0c          | DCµA            | µA  | 30="220", 31="2200"  |
+| 0d          | ACµA            | µA  | 30="220", 31="2200"  |
+| 0e          | DCmA            | mA  | 30="22", 31="220"    |
+| 0f          | ACmA            | mA  | 30="22", 31="220"    |
+| 10          | DCA             | A   | 30="2", 31="22"      |
+| 11          | ACA             | A   | 30="2", 31="22"      |
 

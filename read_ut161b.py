@@ -9,20 +9,18 @@ PID = 0xE429  # HID ch9329
 
 #
 # build 7 bytes request cmd, see ut161b_protocol.md
-# cmd is uint16 containing request comand type
+# cmd is byte containing request comand type
 def handle_request(device: hid.device, cmd: int):
-    cmd &= 0xFFFF  
-    cmd0 = (cmd & 0xFF00) >> 8  # upper 8 bit
-    cmd1 = cmd & 0x00FF         # lower 8 bits
-    sum  = (0xab + 0xcd + cmd0 + cmd1) & 0xFFFF
+    cmd &= 0xFF
+    sum  = (0xab + 0xcd + 0x03 + cmd) & 0xFFFF
     sum0 = (sum & 0xFF00) >> 8
     sum1 = sum & 0x00FF
     # hid api function hid_get_feature_report needs 1 byte at front for Report ID, seems here also needed, use 0
-    request_command = [0x00, 0x06, 0xab, 0xcd, cmd0, cmd1, sum0, sum1] 
+    request_command = [0x00, 0x06, 0xab, 0xcd, 0x03, cmd, sum0, sum1] 
     print_packet("request ", request_command[1:])
     device.write(request_command)
     
-    time.sleep(0.01)  # Small delay to allow response
+    time.sleep(0.1)  # 
 
     response = device.read(64)  # Read up to 64 bytes      
     return response[0:64]
@@ -51,33 +49,38 @@ def parse_meas_result(packet: bytes):
     Decodes a UNI-T UT161B multimeter HID packet containg meas results.
     Returns a dictionary with 'mode', 'value', 'unit' and 'range'.
     """
+
+    if packet[0] < 0x13:
+        print("parsed None")
+        return None
+
     if len(packet) < 20:
         print("Error: Packet too short, minimum 20bytes", file=sys.stderr)
         return None
 
     # Mode mappings
     mode_map = {
-        0x1000: "ACV",
-        0x1001: "ACmV",
-        0x1002: "DCV",
-        0x1003: "DCmV",
-        0x1004: "FREQ",
-        0x1005: "Duty",
-        0x1006: "RES",
-        0x1008: "Diode",
-        0x1009: "CAP",
-        0x100c: "DCµA",
-        0x100d: "ACµA",
-        0x100e: "DCmA",
-        0x100f: "ACmA",
-        0x1010: "DCA",
-        0x1011: "ACA",
+        0x00: "ACV",
+        0x01: "ACmV",
+        0x02: "DCV",
+        0x03: "DCmV",
+        0x04: "FREQ",
+        0x05: "Duty",
+        0x06: "RES",
+        0x08: "Diode",
+        0x09: "CAP",
+        0x0c: "DCµA",
+        0x0d: "ACµA",
+        0x0e: "DCmA",
+        0x0f: "ACmA",
+        0x10: "DCA",
+        0x11: "ACA",
     }
 
     # Extract fields
     length = packet[0]
     magic  = packet[1:3]
-    mode   = (packet[3]<<8) | packet[4]
+    mode   = packet[4]
     range_flag = packet[5]  # ASCII digit
     value_str = bytes(packet[6:13]).decode('ascii').strip()  # '  3.795' → '3.795'
     range_info = packet[13:15]
@@ -85,7 +88,7 @@ def parse_meas_result(packet: bytes):
 
     # set unit and range_map based on mode 
     range_map = {}
-    if mode == 0x1000 or mode == 0x1002:  # ACV or DCV
+    if mode == 0x00 or mode == 0x02:  # ACV or DCV
         unit = "V"
         range_map = {
             0x30: "2",   
@@ -93,18 +96,18 @@ def parse_meas_result(packet: bytes):
             0x32: "220", 
             0x33: "1000",
         }
-    elif mode == 0x1001 or mode == 0x1003:  # ACmV or DCmV
+    elif mode == 0x01 or mode == 0x03:  # ACmV or DCmV
         unit = "mV"
         range_map = {
             0x30: "220",   
             0x31: "1000",  # ?
         }
-    elif mode == 0x1004:  # FREQ
+    elif mode == 0x04:  # FREQ
         unit = "Hz"
         range_map = {
             0x30: "22",
         }
-    elif mode == 0x1006:  # RES
+    elif mode == 0x06:  # RES
         unit_map = {
             0x30: "Ω", 
             0x31: "kΩ",
@@ -122,29 +125,29 @@ def parse_meas_result(packet: bytes):
             0x34: "2",  
             0x35: "22", 
         }
-    elif mode == 0x1008:  # Diode
+    elif mode == 0x08:  # Diode
         unit = "V"
         range_map = {
             0x30: "2",
         }
-    elif mode == 0x1009:  # CAP
+    elif mode == 0x09:  # CAP
         unit = "nF"
         range_map = {
             0x30: "22",
         }
-    elif mode == 0x100c or mode == 0x100d:  # DCµA or ACµA
+    elif mode == 0x0c or mode == 0x0d:  # DCµA or ACµA
         unit = "µA"
         range_map = {
             0x30: "220",
             0x31: "2200",
         }
-    elif mode == 0x100e or mode == 0x100f:  # DCmA or ACmA
+    elif mode == 0x0e or mode == 0x0f:  # DCmA or ACmA
         unit = "mA"
         range_map = {
             0x30: "22",
             0x31: "220",
         }
-    elif mode == 0x1010 or mode == 0x1011:  # DCA or ACA
+    elif mode == 0x10 or mode == 0x11:  # DCA or ACA
         unit = "A"
         range_map = {
             0x30: "2",
@@ -184,21 +187,29 @@ def main():
         device.open(VID, PID)
         print(f"Connected to {device.get_product_string()}")
 
-		# send switch light request
-        resp = handle_request(device, 0x034b)
-        print_packet("response", resp)
-        time.sleep(0.1)     # switch light seems to need some time
-
-		# send MAX/MIN request 
-        resp = handle_request(device, 0x0341)
+        # get device name
+        resp = handle_request(device, 0x5f)
         print_packet("response", resp)
         time.sleep(0.1)
+        resp = handle_request(device, 0x30)  # flush buf ?
+        print_packet("response", resp)
+        try:
+            ascii_text = bytes(resp[3:10]).decode("ascii")
+        except UnicodeDecodeError:
+            ascii_text = resp[3:6].decode("utf-8", errors="replace")
+        print(ascii_text);
 
-        # send req 035e meas result and receive packet
-        resp = handle_request(device, 0x35e)
+        time.sleep(0.5)
+
+        #send range
+        resp = handle_request(device, 0x42)
         print_packet("response", resp)
 
-        # parse meas result
+        time.sleep(0.2)
+
+        # send req 5e meas result
+        resp = handle_request(device, 0x5e)
+        print_packet("response", resp)
         result = parse_meas_result(resp)
         if result:
             print("Decoded meas result response:")

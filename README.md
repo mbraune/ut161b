@@ -23,9 +23,12 @@ simple way to receive 64byte data packets from DMM to PC
 ### protocol analysis
 protocol to be decoded by vendor tool and wireshark
 
+some parts of protocol decoding from https://github.com/ljakob/unit_ut61eplus.git
+
+
 ### python example 
  - open hid device 
- - send 2 request cmds
+ - send request cmds
  - send measure result request
  - parse meas result response
  - close device
@@ -33,15 +36,18 @@ protocol to be decoded by vendor tool and wireshark
 **output:**
 ````
 Connected to WCH UART TO KB-MS_V1.7
-request  06 ab cd 03 4b 01 c6
+request  06 ab cd 03 5f 01 da
 response 07 ab cd 04 ff 00 02 7b
-request  06 ab cd 03 41 01 bc
+request  06 ab cd 03 30 01 ab
+response 0b ab cd 08 55 54 31 36 31 42 03 03
+UT161B
+request  06 ab cd 03 42 01 bd
 response 07 ab cd 04 ff 00 02 7b
 request  06 ab cd 03 5e 01 d9
-response 13 ab cd 10 01 30 20 20 20 31 2e 31 32 00 00 34 34 30 03 73
+response 13 ab cd 10 02 30 20 20 30 2e 30 30 30 00 00 30 30 30 03 78
 Decoded meas result response:
-  mode: ACmV
- value: 1.12
-  unit: mV
- range: 220
+  mode: DCV
+ value: 0.000
+  unit: V
+ range: 2
 ````
