@@ -67,6 +67,7 @@ def parse_meas_result(packet: bytes):
         0x04: "FREQ",
         0x05: "Duty",
         0x06: "RES",
+        0x07: "Cont",
         0x08: "Diode",
         0x09: "CAP",
         0x0c: "DCµA",
@@ -124,6 +125,11 @@ def parse_meas_result(packet: bytes):
             0x33: "220",
             0x34: "2",  
             0x35: "22", 
+        }
+    elif mode == 0x07:  # Continuity Test
+        unit = "Ω"
+        range_map = {
+            0x30: "2",
         }
     elif mode == 0x08:  # Diode
         unit = "V"
