@@ -23,7 +23,7 @@ by using hidapi (https://github.com/libusb/hidapi)
 
 
 ### protocol analysis
-protocol to be decoded by vendor tool and wireshark 
+protocol to be decoded by vendor tool and wireshark  
 some parts of protocol decoding from https://github.com/ljakob/unit_ut61eplus.git
 
 ### python example 
