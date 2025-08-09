@@ -23,7 +23,7 @@ by using hidapi (https://github.com/libusb/hidapi)
 
 
 ### protocol analysis
-protocol to be decoded by vendor tool and wireshark
+protocol to be decoded by vendor tool and wireshark 
 some parts of protocol decoding from https://github.com/ljakob/unit_ut61eplus.git
 
 ### python example 
@@ -32,22 +32,20 @@ https://pypi.org/project/hidapi/
 runs both on linux and windows
 
 #### Linux 
-Ubuntu : tested with python system installation, 
-apt install python3-hid
-
-apt install libusb-dev, libudev-dev
-
+Ubuntu : tested with python system installation  
+apt install python3-hid  
+apt install libusb-dev, libudev-dev  
 udev rule necessary to grant user-level access to HID device
 
 #### Windows 
-pip install hidapi
+pip install hidapi  
 no udev or firewall rule needed, access to HID device managed by the system's driver stack
 
 #### example flow
- - open hid device 
- - send request cmds
- - send measure result request
- - parse meas result response
+ - open hid device  
+ - send request cmds  
+ - send measure result request  
+ - parse meas result response  
  - close device
 
 **output:**
