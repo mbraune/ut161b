@@ -34,7 +34,9 @@ runs both on linux and windows
 #### Linux 
 Ubuntu : tested with python system installation, 
 apt install python3-hid
+
 apt install libusb-dev, libudev-dev
+
 udev rule necessary to grant user-level access to HID device
 
 #### Windows 
